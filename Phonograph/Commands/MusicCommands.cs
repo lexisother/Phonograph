@@ -29,6 +29,16 @@ public class MusicCommands : ApplicationCommandsModule
 	[SlashCommand("play", "Play music asynchronously")]
 	public static async Task PlayAsync(InteractionContext ctx, [Option("query", "Search string or Youtube link")] string query)
 	{
+		if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
+		{
+			await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+			{
+				IsEphemeral = true,
+				Content = "You must be in a voice channel!"
+			});
+			return;
+		}
+
 		var lava = ctx.Client.GetLavalink();
 		var node = lava.ConnectedSessions.Values.First();
 		var connection = node.GetGuildPlayer(ctx.Member.VoiceState.Guild);
@@ -61,7 +71,7 @@ public class MusicCommands : ApplicationCommandsModule
 			}
 		}
 
-		if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null || ctx.Member.VoiceState.Channel != connection.Channel)
+		if (ctx.Member.VoiceState.Channel != connection.Channel)
 		{
 			await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
 			{
