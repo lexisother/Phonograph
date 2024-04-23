@@ -71,7 +71,19 @@ public class MusicCommands : ApplicationCommandsModule
 			return;
 		}
 
-		var loadResult = await node.LoadTracksAsync(query);
+		var type = LavalinkSearchType.Youtube;
+		if (query.StartsWith("ytsearch:"))
+		{
+			query = query.Replace("ytsearch:", "");
+			type = LavalinkSearchType.Youtube;
+		}
+		else if (query.StartsWith("scsearch:"))
+		{
+			query = query.Replace("scsearch:", "");
+			type = LavalinkSearchType.SoundCloud;
+		}
+
+		var loadResult = await node.LoadTracksAsync(type, query);
 
 		if (loadResult.LoadType is LavalinkLoadResultType.Error or LavalinkLoadResultType.Empty)
 		{
