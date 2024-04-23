@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>Phonograph</AssemblyName>
+        <RootNamespace>Phonograph</RootNamespace>
+        <PackageId>Phonograph</PackageId>
+        <Authors>Alyxia Sother &lt;alyxia@riseup.net&gt;</Authors>
+        <Description>Phonograph music bot</Description>
+        <Copyright>2024+ Alyxia Sother</Copyright>
+        <PackageProjectUrl></PackageProjectUrl>
+        <RepositoryUrl>https://github.com/lexisother/Phonograph</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Company></Company>
+        <Product>Phonograph</Product>
+        <Title>Phonograph</Title>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <NoWarn>1701;1702;DV2001</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <NoWarn>1701;1702;DV2001</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DisCatSharp" Version="10.6.2" />
+      <PackageReference Include="DisCatSharp.ApplicationCommands" Version="10.6.2" />
+      <PackageReference Include="DisCatSharp.Lavalink" Version="10.6.2" />
+      <PackageReference Include="Serilog" Version="3.1.1" />
+      <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    </ItemGroup>
+
+</Project>

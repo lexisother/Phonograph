@@ -1,0 +1,8 @@
+**/.obsidian
+**/.vscode
+**/.vs
+**/.idea
+**/obj
+**/bin
+application.yml
+.env
