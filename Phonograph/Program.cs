@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
 using DisCatSharp;
 using DisCatSharp.ApplicationCommands;
+using DisCatSharp.ApplicationCommands.Context;
 using DisCatSharp.ApplicationCommands.EventArgs;
 using DisCatSharp.Lavalink;
+using DisCatSharp.Lavalink.Entities;
 using DisCatSharp.Net;
 
 using Microsoft.Extensions.Logging;
@@ -14,6 +17,89 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace Phonograph;
+
+static class Queue
+{
+	private static Dictionary<string, List<TrackItem>> GuildQueue;
+
+	public static void Init()
+	{
+		GuildQueue = new();
+	}
+
+	public static bool GetQueue(string id, out List<TrackItem> queue)
+	{
+		if (GuildQueue.TryGetValue(id, out var value))
+		{
+			queue = value;
+			return true;
+		}
+
+		queue = null;
+		return false;
+	}
+
+	public static List<TrackItem> AddToQueue(InteractionContext ctx, LavalinkTrack track)
+	{
+		var guildId = ctx.Guild.Id.ToString();
+		var trackItem = new TrackItem
+		{
+			Context = ctx,
+			Track = track
+		};
+
+		var exists = GetQueue(guildId, out var trackQueue);
+		if (!exists)
+			GuildQueue.Add(guildId, [trackItem]);
+		else
+		{
+			trackQueue.Add(trackItem);
+			GuildQueue[guildId] = trackQueue;
+		}
+
+		return GuildQueue[guildId];
+	}
+
+	public enum NextStatus
+	{
+		Found,
+		Empty,
+		NoGuild
+	}
+
+	public static NextStatus GetNext(string id, out TrackItem item)
+	{
+		var exists = GetQueue(id, out var queue);
+
+		if (!exists)
+		{
+			item = new();
+			return NextStatus.Empty;
+		}
+
+		var ctx = queue[0].Context;
+		queue.RemoveAt(0);
+		GuildQueue[id] = queue;
+		if (GuildQueue[id].Count > 0)
+		{
+			item = GuildQueue[id][0];
+			return NextStatus.Found;
+		}
+
+		item = new()
+		{
+			Context = ctx,
+			Track = new()
+		};
+		return NextStatus.Empty;
+	}
+}
+
+public class TrackItem
+{
+	public InteractionContext Context { get; set; }
+	public LavalinkTrack Track { get; set; }
+}
 
 /// <summary>
 /// The program.
@@ -92,6 +178,7 @@ internal class Program
 		discordClient.Logger.LogInformation($"Connecting to lavalink...");
 		await lavalink.ConnectAsync(lavalinkConfig); // Make sure this is after discordClient.ConnectAsync()
 		discordClient.Logger.LogInformation($"Successful connection with lavalink!");
+		Queue.Init();
 
 		// Listen for commands by putting this method to sleep and relying off of DiscordClient's event listeners
 		await Task.Delay(-1);

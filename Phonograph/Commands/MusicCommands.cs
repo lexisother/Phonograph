@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using DisCatSharp;
 using DisCatSharp.Lavalink.Entities;
 using DisCatSharp.Lavalink.Enums;
+using DisCatSharp.Lavalink.EventArgs;
 
 namespace Phonograph.Commands;
 
@@ -27,7 +28,7 @@ public class MusicCommands : ApplicationCommandsModule
 	/// <param name="ctx">Interaction context</param>
 	/// <param name="query">Search string or Youtube link</param>
 	[SlashCommand("play", "Play music asynchronously")]
-	public static async Task PlayAsync(InteractionContext ctx, [Option("query", "Search string or Youtube link")] string query)
+	public async Task PlayAsync(InteractionContext ctx, [Option("query", "Search string or Youtube link")] string query)
 	{
 		if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
 		{
@@ -106,12 +107,64 @@ public class MusicCommands : ApplicationCommandsModule
 		}
 
 		var track = loadResult.GetResultAs<List<LavalinkTrack>>().First();
-		await connection.PlayAsync(track);
+		var trackQueue = Queue.AddToQueue(ctx, track);
 
-		await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+		if (trackQueue.Count == 1)
 		{
-			Content = $"Now playing {track.Info.Author.InlineCode()} - {track.Info.Title.InlineCode()}"
-		});
+			if (connection != null)
+			{
+				await connection.PlayAsync(track);
+				connection.TrackEnded += this.PlayNext;
+				await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+				{
+					Content = $"Now playing {track.Info.Title} requested by {ctx.Member.DisplayName}"
+				});
+			}
+			else
+				await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+				{
+					Content = "Connection error"
+				});
+		}
+		else
+			await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+			{
+				Content = $"Added {track.Info.Title} to queue"
+			});
+	}
+
+	private async Task PlayNext(LavalinkGuildPlayer sender, LavalinkTrackEndedEventArgs e)
+	{
+		var status = Queue.GetNext(sender.Guild.Id.ToString(), out var track);
+
+		switch (status)
+		{
+			case Queue.NextStatus.Empty:
+			{
+				var ctx = track.Context;
+				var lava = ctx.Client.GetLavalink();
+				var node = lava.ConnectedSessions.Values.First();
+				var connection = node.GetGuildPlayer(ctx.Member.VoiceState.Guild);
+				await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new()
+				{
+					Content = "No more songs in queue"
+				});
+				await connection.StopAsync();
+				return;
+			}
+			case Queue.NextStatus.Found:
+			{
+				var ctx = track.Context;
+				var lava = ctx.Client.GetLavalink();
+				var node = lava.ConnectedSessions.Values.First();
+				var connection = node.GetGuildPlayer(ctx.Member.VoiceState.Guild);
+				await connection.PlayAsync(track.Track);
+				await ctx.Channel.SendMessageAsync($"Now playing {track.Track.Info.Title} requested by {track.Context.Member.DisplayName}");
+				return;
+			}
+			default:
+				return;
+		}
 	}
 
 	/// <summary>

@@ -9,10 +9,8 @@
         <Authors>Alyxia Sother &lt;alyxia@riseup.net&gt;</Authors>
         <Description>Phonograph music bot</Description>
         <Copyright>2024+ Alyxia Sother</Copyright>
-        <PackageProjectUrl></PackageProjectUrl>
         <RepositoryUrl>https://github.com/lexisother/Phonograph</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <Company></Company>
         <Product>Phonograph</Product>
         <Title>Phonograph</Title>
     </PropertyGroup>
